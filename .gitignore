@@ -1,0 +1,14 @@
+# Build outputs
+jars/
+*.jar
+*.class
+
+# IDE
+.idea/
+*.iml
+
+# OS
+.DS_Store
+
+# Kompile cache
+.aibuildcaches/
