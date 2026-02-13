@@ -19,7 +19,7 @@ import java.util.concurrent.TimeUnit
  * Stores container metadata as JSON files on disk. Supports auto-termination
  * via a scheduled executor.
  */
-class DockerRunEmbedded(private val dataDir: File) : DockerRunService {
+class DockerRunEmbeddedUsingDaemon(private val dataDir: File) : DockerRunService {
 
     private val scheduler: ScheduledExecutorService = Executors.newScheduledThreadPool(2)
     private val autoTerminateFutures = ConcurrentHashMap<UUID, ScheduledFuture<*>>()
@@ -48,7 +48,7 @@ class DockerRunEmbedded(private val dataDir: File) : DockerRunService {
             dockerContainerId = null
         )
 
-        println("[DockerRunEmbedded] Starting container $uuid with image '$imageReference'")
+        println("[DockerRunEmbeddedUsingDaemon] Starting container $uuid with image '$imageReference'")
 
         // Start the container asynchronously
         scheduler.submit {
@@ -72,7 +72,7 @@ class DockerRunEmbedded(private val dataDir: File) : DockerRunService {
                 val exitCode = process.waitFor()
 
                 if (exitCode != 0) {
-                    println("[DockerRunEmbedded] Failed to start container $uuid: $output")
+                    println("[DockerRunEmbeddedUsingDaemon] Failed to start container $uuid: $output")
                     container.writeConfig(
                         status = ContainerStatus.FAILED.name,
                         errorMessage = "docker run failed (exit code $exitCode): ${output.take(1000)}"
@@ -81,7 +81,7 @@ class DockerRunEmbedded(private val dataDir: File) : DockerRunService {
                 }
 
                 val dockerContainerId = output.take(64)
-                println("[DockerRunEmbedded] Container $uuid started with Docker ID: $dockerContainerId")
+                println("[DockerRunEmbeddedUsingDaemon] Container $uuid started with Docker ID: $dockerContainerId")
 
                 container.writeConfig(
                     status = ContainerStatus.RUNNING.name,
@@ -91,18 +91,18 @@ class DockerRunEmbedded(private val dataDir: File) : DockerRunService {
                 // Schedule auto-termination if requested
                 if (autoTerminateSeconds > 0) {
                     val future = scheduler.schedule({
-                        println("[DockerRunEmbedded] Auto-terminating container $uuid after ${autoTerminateSeconds}s")
+                        println("[DockerRunEmbeddedUsingDaemon] Auto-terminating container $uuid after ${autoTerminateSeconds}s")
                         try {
                             terminateContainerInternal(uuid)
                         } catch (e: Exception) {
-                            println("[DockerRunEmbedded] Auto-terminate error for $uuid: ${e.message}")
+                            println("[DockerRunEmbeddedUsingDaemon] Auto-terminate error for $uuid: ${e.message}")
                         }
                     }, autoTerminateSeconds, TimeUnit.SECONDS)
                     autoTerminateFutures[uuid] = future
                 }
 
             } catch (e: Exception) {
-                println("[DockerRunEmbedded] Error starting container $uuid: ${e.message}")
+                println("[DockerRunEmbeddedUsingDaemon] Error starting container $uuid: ${e.message}")
                 e.printStackTrace()
                 container.writeConfig(
                     status = ContainerStatus.FAILED.name,
@@ -155,7 +155,7 @@ class DockerRunEmbedded(private val dataDir: File) : DockerRunService {
         }
 
         impl.writeConfig(status = ContainerStatus.PAUSED.name)
-        println("[DockerRunEmbedded] Paused container ${container.uuid}")
+        println("[DockerRunEmbeddedUsingDaemon] Paused container ${container.uuid}")
     }
 
     override fun unpauseContainer(container: DockerContainer) {
@@ -184,7 +184,7 @@ class DockerRunEmbedded(private val dataDir: File) : DockerRunService {
         }
 
         impl.writeConfig(status = ContainerStatus.RUNNING.name)
-        println("[DockerRunEmbedded] Unpaused container ${container.uuid}")
+        println("[DockerRunEmbeddedUsingDaemon] Unpaused container ${container.uuid}")
     }
 
     override fun terminateContainer(container: DockerContainer) {
@@ -195,7 +195,7 @@ class DockerRunEmbedded(private val dataDir: File) : DockerRunService {
         val impl = getContainerImpl(uuid)
 
         if (impl.status == ContainerStatus.TERMINATED) {
-            println("[DockerRunEmbedded] Container $uuid is already terminated")
+            println("[DockerRunEmbeddedUsingDaemon] Container $uuid is already terminated")
             return
         }
 
@@ -220,7 +220,7 @@ class DockerRunEmbedded(private val dataDir: File) : DockerRunService {
         autoTerminateFutures.remove(uuid)?.cancel(false)
 
         impl.writeConfig(status = ContainerStatus.TERMINATED.name)
-        println("[DockerRunEmbedded] Terminated container $uuid")
+        println("[DockerRunEmbeddedUsingDaemon] Terminated container $uuid")
     }
 
     internal fun containersDir(): File = File(dataDir, "containers").apply { mkdirs() }
@@ -232,7 +232,7 @@ class DockerRunEmbedded(private val dataDir: File) : DockerRunService {
 
 
 class DockerContainerImpl(
-    private val service: DockerRunEmbedded,
+    private val service: DockerRunEmbeddedUsingDaemon,
     override val uuid: UUID
 ) : DockerContainer {
 

@@ -1,10 +1,10 @@
-# DockerRunEmbedded
+# DockerRunEmbeddedUsingDaemon
 
 Local embedded implementation of the [DockerRunApi](https://github.com/CodexCoder21Organization/DockerRunApi) interfaces. Manages Docker containers on the local machine using the docker CLI.
 
 ## Overview
 
-DockerRunEmbedded implements `DockerRunService` by shelling out to the `docker` CLI to start, pause, unpause, and terminate containers. Container metadata is persisted as JSON files on disk, and auto-termination is handled via a `ScheduledExecutorService`.
+DockerRunEmbeddedUsingDaemon implements `DockerRunService` by shelling out to the `docker` CLI to start, pause, unpause, and terminate containers. Container metadata is persisted as JSON files on disk, and auto-termination is handled via a `ScheduledExecutorService`.
 
 ## Features
 
@@ -24,11 +24,11 @@ scripts/build.bash dockerrun.embedded.buildMaven
 ## Usage
 
 ```kotlin
-import dockerrun.embedded.DockerRunEmbedded
+import dockerrun.embedded.DockerRunEmbeddedUsingDaemon
 import dockerrun.api.ContainerStatus
 import java.io.File
 
-val service = DockerRunEmbedded(File("/tmp/dockerrun-data"))
+val service = DockerRunEmbeddedUsingDaemon(File("/tmp/dockerrun-data"))
 
 // Start a container with auto-termination after 1 hour
 val container = service.startContainer(

@@ -22,7 +22,7 @@ val dependencies = resolveDependencies(
 fun buildMaven(): File {
     return buildSimpleKotlinMavenArtifact(
         // 0.0.1: Initial release
-        //        - DockerRunEmbedded: Local implementation of DockerRunService using docker CLI
+        //        - DockerRunEmbeddedUsingDaemon: Local implementation of DockerRunService using docker CLI
         //        - Container lifecycle: start, pause, unpause, terminate
         //        - Auto-termination via ScheduledExecutorService
         //        - JSON config storage on disk
